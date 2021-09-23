@@ -1,9 +1,10 @@
 #!/bin/bash
+set -e
 
 TestAndCreateDir() {
     if [ ! -d $1 ]; then
-	#echo "Directory $1 does not exist. Creating it.";
-        mkdir $1;
+        #echo "Directory $1 does not exist. Creating it.";
+        mkdir -p $1;
     fi
 }
 
@@ -14,9 +15,8 @@ then
   exit 1;
 fi
 
-. $1 || exit 1
-
 echo "Read settings file."
+. $1 || exit 1
 
 if test -z "$ADMIN_KEY"
 then
@@ -32,7 +32,12 @@ TestAndCreateDir $CIVSDATADIR;
 TestAndCreateDir $CIVSDATADIR/elections;
 TestAndCreateDir $CIVSDATADIR/invites;
 
-rm $CIVSDATADIR/elections/admission_control $CIVSDATADIR/lockserv
+for f in elections/admission_control lockserv
+do
+    if [ -e $CIVSDATADIR/$f ]; then
+        rm $CIVSDATADIR/$f
+    fi
+done
 
     for f in civs_create.html* index.html* public_elections.html*	      \
         proportional.html* sec_priv.html* acks.html changelog.html*	      \
@@ -78,7 +83,7 @@ rm $CIVSDATADIR/elections/admission_control $CIVSDATADIR/lockserv
 	< "$f" > "$dest"
     done
 
-    echo -n "copying:"
+    echo "copying:"
     for f in add_voters beatpath.pm beatpath2.pm civs_common.pm		      \
         voting.pm close control create_election download_ballots	      \
         remove_writein upload_ballots results top_polls.pm		      \
@@ -164,20 +169,13 @@ rm $CIVSDATADIR/elections/admission_control $CIVSDATADIR/lockserv
     touch $CIVSDATADIR/nonce_seed $CIVSDATADIR/log $CIVSDATADIR/cgi-log $CIVSDATADIR/global_lock
     chmod ugo+w $CIVSDATADIR/nonce_seed $CIVSDATADIR/log $CIVSDATADIR/cgi-log $CIVSDATADIR/global_lock
 
-    if [ -e gettimeofday.exe ]; then
-	cp gettimeofday.exe $CIVSDATADIR/gettimeofday.exe;
-    else
-	cp gettimeofday $CIVSDATADIR/gettimeofday
-    fi
-    if [ -e timeout.exe ]; then
-	cp timeout.exe $CIVSDATADIR/timeout.exe;
-    else
-	cp timeout $CIVSDATADIR/timeout
-    fi
-    if [ -e lockserv.exe ]; then
-	cp lockserv.exe $CIVSDATADIR/lockserv.exe;
-    else
-	cp lockserv $CIVSDATADIR/lockserv
-    fi
+    for f in gettimeofday timeout lockserv
+    do
+        if [ -e "$f".exe ]; then
+            cp "$f".exe $CIVSDATADIR/
+        else
+            cp "$f" $CIVSDATADIR/
+        fi
+    done
 
 echo "Install completed.  Check for any errors reported above.";
