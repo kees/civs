@@ -136,6 +136,7 @@ done
 	     -e 's|@DONATE_URL@|'$DONATE_URL'|' \
 	 	 < "cgi-bin/$f" > "$target"
 	chmod a+x "$target"
+	installed="$installed $target"
     done
     mkdir -p "${HTMLDIR}/images"
     for f in images/{check123b,sample-ballot,vertstrip,check-civs}.png;
@@ -143,7 +144,7 @@ done
 	dest="${HTMLDIR}/${f}"
         cp "$f" "$dest"
     done
-    echo; echo
+    echo
 
     if [ ! -s $CIVSDATADIR/private_host_id ]; then
 	echo "*********************************************";
@@ -177,5 +178,36 @@ done
             cp "$f" $CIVSDATADIR/
         fi
     done
+
+    # Test resulting installed scripts, after everything has been
+    # installed.
+    log="$CIVSDATADIR/cgi-log"
+    cp "$log" "$log".test
+    syntax=
+    for f in $installed
+    do
+        # Catch and report redirected errors (either redirected
+        # directly or via BEGIN).
+        rm "$log"
+        touch "$log"
+        fail=
+        if ! perl -I "${CGIBINDIR}" -c "$f" >/dev/null 2>>"$log"; then
+            fail=1
+        fi
+        cat "$log"
+        unexpected_lines=$(grep -v "syntax OK" -- "$log" | wc -l)
+        if [ "$unexpected_lines" -gt 0 ]; then
+            fail=1
+        fi
+        if [ -n "$fail" ]; then
+            syntax="$syntax $f"
+        fi
+    done
+    mv "$log".test "$log"
+    if [ -n "$syntax" ]; then
+        echo "Syntax checking failures: $syntax"
+        exit 1
+    fi
+    echo
 
 echo "Install completed.  Check for any errors reported above.";
