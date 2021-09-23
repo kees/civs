@@ -23,7 +23,6 @@ if (!CheckAddr($address)) {
 
 &AcquireGlobalLock;
 
-my $code = param('code');
 my $optouts = &GetOptouts();
 my $opted_out = &HasOptOuts($optouts, $address);
 
